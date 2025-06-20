@@ -1,5 +1,6 @@
 import ctypes
 from ctypes import wintypes
+from PIL import Image
 
 # 定义回调函数类型
 EnumWindowsProc = ctypes.WINFUNCTYPE(
@@ -26,19 +27,6 @@ def list_window_titles():
     ctypes.windll.user32.EnumWindows(EnumWindowsProc(enum_windows_callback), 0)
     return titles
 
-def get_artale_title():
-    titles = list_window_titles()
-    artale_substring = "MapleStory Worlds-Artale"
-    result = list(filter(lambda item: artale_substring in item, titles))
-    if len(result) > 0:
-        return result[0]
-    return ""
-
-def artale_exists():
-    return get_artale_title() != ""
-
-def get_artale_window_hwnd():
-    return ctypes.windll.user32.FindWindowW(None, get_artale_title())
 
 def force_foreground_window(hwnd):
     """
@@ -82,16 +70,106 @@ def maximize_window_safe(hwnd):
     
     return bool(result)
 
-def foreground_artale():
-    hwnd = get_artale_window_hwnd()
-    if hwnd is not None:
-        force_foreground_window(hwnd)
-    else:
-        print("Artale 窗口不存在")
 
-def maximize_artale():
-    hwnd = get_artale_window_hwnd()
-    if hwnd is not None:
-        maximize_window_safe(hwnd)
-    else:
-        print("Artale 窗口不存在")
+# 定义必要的 Windows 常量
+SRCCOPY = 0x00CC0020
+
+# 定义必要的 Windows 结构体
+class RECT(ctypes.Structure):
+    _fields_ = [
+        ('left', ctypes.c_long),
+        ('top', ctypes.c_long),
+        ('right', ctypes.c_long),
+        ('bottom', ctypes.c_long)
+    ]
+
+class BITMAPINFOHEADER(ctypes.Structure):
+    _fields_ = [
+        ('biSize', ctypes.c_ulong),
+        ('biWidth', ctypes.c_long),
+        ('biHeight', ctypes.c_long),
+        ('biPlanes', ctypes.c_ushort),
+        ('biBitCount', ctypes.c_ushort),
+        ('biCompression', ctypes.c_ulong),
+        ('biSizeImage', ctypes.c_ulong),
+        ('biXPelsPerMeter', ctypes.c_long),
+        ('biYPelsPerMeter', ctypes.c_long),
+        ('biClrUsed', ctypes.c_ulong),
+        ('biClrImportant', ctypes.c_ulong)
+    ]
+
+class BITMAPINFO(ctypes.Structure):
+    _fields_ = [
+        ('bmiHeader', BITMAPINFOHEADER),
+        ('bmiColors', ctypes.c_ulong * 3)  # 颜色表，RGB格式通常不需要
+    ]
+
+def capture_window_region(hwnd, left, top, right, bottom):
+    """
+    截取窗口指定区域的截图
+    
+    参数:
+        hwnd: 窗口句柄
+        left, top, right, bottom: 要截取的区域坐标(相对于窗口客户区)
+    
+    返回:
+        PIL.Image 对象
+    """
+    # 获取窗口DC
+    hdc_window = ctypes.windll.user32.GetWindowDC(hwnd)
+    
+    # 创建兼容DC
+    hdc_mem = ctypes.windll.gdi32.CreateCompatibleDC(hdc_window)
+    
+    # 计算区域宽度和高度
+    width = right - left
+    height = bottom - top
+    
+    # 创建位图
+    hbitmap = ctypes.windll.gdi32.CreateCompatibleBitmap(hdc_window, width, height)
+    
+    # 选择位图到内存DC
+    hdc_old = ctypes.windll.gdi32.SelectObject(hdc_mem, hbitmap)
+    
+    # 执行位块传输
+    ctypes.windll.gdi32.BitBlt(
+        hdc_mem, 0, 0, width, height,
+        hdc_window, left, top, SRCCOPY
+    )
+    
+    # 获取位图信息
+    bmpinfo = BITMAPINFO()
+    bmpinfo.bmiHeader.biSize = ctypes.sizeof(BITMAPINFOHEADER)
+    bmpinfo.bmiHeader.biWidth = width
+    bmpinfo.bmiHeader.biHeight = -height  # 注意这个负号
+    bmpinfo.bmiHeader.biPlanes = 1
+    bmpinfo.bmiHeader.biBitCount = 32
+    bmpinfo.bmiHeader.biCompression = 0  # BI_RGB
+    bmpinfo.bmiHeader.biSizeImage = 0
+    
+    # 使用正确的缓冲区大小
+    buffer = (ctypes.c_byte * (width * height * 4))()
+    
+    # 确保调用成功
+    if not ctypes.windll.gdi32.GetDIBits(
+        hdc_mem, hbitmap, 0, height,
+        buffer, ctypes.byref(bmpinfo),
+        0  # DIB_RGB_COLORS
+    ):
+        raise RuntimeError("GetDIBits failed")
+    
+    # 清理资源
+    ctypes.windll.gdi32.SelectObject(hdc_mem, hdc_old)
+    ctypes.windll.gdi32.DeleteObject(hbitmap)
+    ctypes.windll.gdi32.DeleteDC(hdc_mem)
+    ctypes.windll.user32.ReleaseDC(hwnd, hdc_window)
+    
+    # 将缓冲区转换为PIL图像
+    img = Image.frombuffer(
+        'RGBA',
+        (width, height),
+        buffer,
+        'raw', 'BGRA', 0, 1
+    )
+    
+    return img
