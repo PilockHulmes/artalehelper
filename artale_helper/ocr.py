@@ -13,15 +13,15 @@ class OCR:
             use_textline_orientation=False
         )
     
-    def predict(self, images):
-        images = self._ensure_images(images)
-        result = self.ocr.predict(images)
+    def predict(self, image):
+        # images = self._ensure_images(images)
+        result = self.ocr.predict(image)
         texts = []
         for res in result:
               texts.append("".join(res["rec_texts"]))
         return texts
 
-    def _ensure_images(images):
+    def _ensure_images(self, images):
             """
             将各种格式的图片输入统一转换为 NumPy 数组的形式
             
