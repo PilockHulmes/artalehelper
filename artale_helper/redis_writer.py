@@ -27,13 +27,13 @@ class RedisWriter:
         # 生成唯一键
         key = f"string:{time.time()}:{random.randint(1000, 9999)}"
         
-        # 存储到Redis，设置48小时过期
+        # 存储到Redis，设置24小时过期
         self.redis.hmset(key, data)
-        expiration = int(timedelta(days=2).total_seconds())
+        expiration = int(timedelta(days=1).total_seconds())
         self.redis.expire(key, expiration)
         
         # 发布通知
-        self.redis.publish(self.channel, key)
+        self.redis.publish(self.channel, data)
         
         print(f"存储成功: {key} - {content}，生命周期 {expiration}")
         return key
