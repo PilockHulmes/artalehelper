@@ -2,6 +2,10 @@ from artale_helper import windows_utils
 import ctypes
 import time
 from PIL import Image
+import opencc
+
+s2t_converter = opencc.OpenCC("s2t.json")
+t2s_converter = opencc.OpenCC("t2s.json")
 
 def get_artale_title():
     titles = windows_utils.list_window_titles()
@@ -62,4 +66,4 @@ def split_image_vertically(image, parts=17):
 
 def get_splited_chat_image():
     image = get_chat_image()
-    return split_image_vertically(image, 17)
+    return split_image_vertically(image, 17), image

@@ -3,3 +3,5 @@ pillow
 paddlepaddle
 paddleocr
 setuptools
+opencc
+redis
