@@ -1,11 +1,13 @@
-from artale_helper import windows_utils
+
 import ctypes
 import time
 from PIL import Image
-import opencc
+import platform
 
-s2t_converter = opencc.OpenCC("s2t.json")
-t2s_converter = opencc.OpenCC("t2s.json")
+if platform.system() == "Windows":
+    from artale_helper import windows_utils
+if platform.system() == "Darwin":
+    from artale_helper import mac_utils
 
 def get_artale_title():
     titles = windows_utils.list_window_titles()
@@ -41,16 +43,14 @@ def get_chat_image():
     time.sleep(0.5) # wait for window to show up
     return windows_utils.capture_window_region(0, 5, 379, 1135, 902).convert("RGB")
 
-def split_image_vertically(image, parts=17):
+def split_smega_image_vertically(image, parts=17, part_height=31):
     """
-    将图像垂直分割成指定数量的等份
+    将喇叭信息垂直分割成指定数量的等份
     :param image: PIL Image 对象
     :param parts: 要分割的份数
     :return: 包含所有分割后图像的列表
     """
     width, height = image.size
-    part_height = height // parts + 1  # 每份的高度
-    print(part_height)
     cropped_images = []
     for i in range(parts):
         # 计算每个部分的边界框 (left, upper, right, lower)
@@ -65,5 +65,9 @@ def split_image_vertically(image, parts=17):
     return cropped_images
 
 def get_splited_chat_image():
-    image = get_chat_image()
-    return split_image_vertically(image, 17), image
+    if platform.system() == "Windows":
+        image = get_chat_image()
+        return split_smega_image_vertically(image, 17, 31), image
+    elif platform.system() == "Darwin":
+        image = mac_utils.capture_artale_window()
+        return split_smega_image_vertically(image, 17, 33), image
