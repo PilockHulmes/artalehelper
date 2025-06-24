@@ -3,17 +3,18 @@ from artale_helper.ocr import OCR
 from artale_helper.redis_writer import RedisWriter
 import time
 import numpy as np
-
+import re
 
 ocr = OCR()
-redis_writer = RedisWriter()
+redis_writer = RedisWriter(host="localhost")
 while True:
     time.sleep(1)
     images, i = artale_utils.get_splited_chat_image()
-    i.show()
+    # i.show()
     for image in images:
         np_image = np.array(image)
         texts = ocr.predict(np_image)
         for text in texts:
-            print(text)
-            # redis_writer.store_string(text)
+            # print(text)
+            # print(re.split(r'(CH.*?[:：：])', text, maxsplit=1))
+            redis_writer.store_string(text)

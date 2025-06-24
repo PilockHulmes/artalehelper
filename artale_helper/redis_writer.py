@@ -4,6 +4,7 @@ import random
 from datetime import datetime, timedelta
 from collections import deque
 
+
 class RedisWriter:
     def __init__(self, host='192.168.1.100', port=6379, db=0, channel="smega_content"):
         self.redis = redis.Redis(host=host, port=port, db=db)
@@ -33,7 +34,7 @@ class RedisWriter:
         self.redis.expire(key, expiration)
         
         # 发布通知
-        self.redis.publish(self.channel, data)
+        self.redis.publish(self.channel, content)
         
         print(f"存储成功: {key} - {content}，生命周期 {expiration}")
         return key
