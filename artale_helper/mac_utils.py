@@ -14,7 +14,7 @@ def get_artale_window():
         if window.get("kCGWindowOwnerName", "") != "MapleStory Worlds":
             continue
         bounds = window.get('kCGWindowBounds', {})
-        if "Height" not in bounds or bounds["Height"] < 1080:
+        if "Height" not in bounds or bounds["Height"] < 1050:
             continue
         return window
 

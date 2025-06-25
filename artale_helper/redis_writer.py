@@ -36,5 +36,5 @@ class RedisWriter:
         # 发布通知
         self.redis.publish(self.channel, content)
         
-        print(f"存储成功: {key} - {content}，生命周期 {expiration}")
+        # print(f"存储成功: {key} - {content}，生命周期 {expiration}")
         return key

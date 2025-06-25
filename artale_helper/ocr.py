@@ -3,15 +3,26 @@ import numpy as np
 from PIL import Image
 
 class OCR:
-    def __init__(self):
-          self.ocr = PaddleOCR(
-            text_detection_model_name="PP-OCRv5_mobile_det",
-            text_recognition_model_name="PP-OCRv5_mobile_rec",
-            ocr_version="PP-OCRv5",
-            use_doc_orientation_classify=False,
-            use_doc_unwarping=False,
-            use_textline_orientation=False
-        )
+    def __init__(self, lang=None):
+        if lang is not None:
+            self.ocr = PaddleOCR(
+                text_detection_model_name="PP-OCRv5_mobile_det",
+                text_recognition_model_name="PP-OCRv5_mobile_rec",
+                ocr_version="PP-OCRv5",
+                use_doc_orientation_classify=False,
+                use_doc_unwarping=False,
+                use_textline_orientation=False,
+                lang=lang,
+            )
+        else:
+            self.ocr = PaddleOCR(
+                text_detection_model_name="PP-OCRv5_mobile_det",
+                text_recognition_model_name="PP-OCRv5_mobile_rec",
+                ocr_version="PP-OCRv5",
+                use_doc_orientation_classify=False,
+                use_doc_unwarping=False,
+                use_textline_orientation=False,
+            )
     
     def predict(self, image):
         # images = self._ensure_images(images)
